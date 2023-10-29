@@ -1,0 +1,43 @@
+# The assembler has a write address. When writing an object that has a size of x
+# bytes (instruction, variable, etc.), it is written to the write address and
+# the write address is incremented by x.
+#
+# The write address can be moved with '.move ...' where ... is a 16 bit address.
+
+
+
+.def VALUE1 1234            # VALUE1 is an alias of 1234
+.def VALUE2 "hello"         # VALUE2 is an alias of "hello"
+
+# Aliases are replaced directly with their values, like #define in C.
+# Aliases do not have a size; they are only symbols for the assembler.
+
+
+
+# DATA SECTION
+.move 0x0000                # move the current address to 0
+    foo: .word VALUE1       # declare one word with value 1234 at address 0
+    asd: .word 3210 500     # declare 500 words with value 3210 at address 2
+    bar: .byte 123          # declare one byte with value 123 at address 1002
+    str: .str VALUE2        # declare a string "hello\0" at address 1003
+
+    # Labels (e.g. foo, asd, etc. in this case) are replaced directly with their
+    # addresses, like aliases.
+
+
+
+# TEXT SECTION (right after data section, at address 1009)
+main:
+    ldi sp 0x8000           # This is translated to xor sp r0 r0 0x8000
+    ldi t0 0                # This is translated to xor t0 t0 t0
+loop:
+    add t0 t0 1             # This is translated to add t0 t0 r0 1
+    bra loop                # This is translated to bra 0x1 r0 r0 -6
+
+
+
+# RESET VECTOR (0xFFFD)
+.move RESET_VECTOR
+    .word main
+
+    # The CPU will begin executing from the 16-bit address located at 0xFFFD.

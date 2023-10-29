@@ -1,0 +1,39 @@
+*** assembly ***
+
+main:
+    ldi t0 0
+    ldi t1 1
+    ldi t3 10
+    beq t3 0 end
+loop:
+    add t2 t0 t1
+    mov t0 t1
+    mov t1 t2
+    sub t3 t3 1
+    bne t3 0 loop
+end:
+    bra end
+    # t0 now contains the t3th fibonacci number
+
+
+
+*** pre-processed assembly ***
+
+main:
+    xor r7 r7 r7
+    add r8 r0 r0 1
+    add r10 r0 r0 10
+    bra 0x8 r10 r0 end
+loop:
+    add r9 r7 r8
+    xor r7 r0 r8
+    xor r8 r0 r9
+    add r10 r10 r0 -1
+    bra 0x9 r10 r0 loop
+end:
+    bra 0x1 r0 r0 end
+
+
+
+*** machine code ***
+0x77, 0xA7, 0x00, 0x08, 0x01, 0x00, 0x0A, 0x0A, 0xA0, 0xD8, 0x0C, 0x78, 0x09, 0x08, 0xA7, 0x09, 0xA8, 0xA0, 0x0A, 0xFF, 0xA0, 0xD9, 0xF4, 0x00, 0xD1, 0xFD

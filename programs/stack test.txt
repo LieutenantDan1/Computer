@@ -1,0 +1,132 @@
+*** assembly ***
+
+main:
+    ldi sp 0x8000   # Initialize stack pointer
+
+    sub sp 4        # Push words 4 then 11 onto the stack
+    ldi t0 11
+    sw t0 sp 0
+    ldi t0 4
+    sw t0 sp 2
+
+    jsr func1       # Call func1
+
+    lw t2 sp 0      # Pop t2 off the stack
+    add sp 2
+
+end:
+    bra end         # Halt; t2 now contains (11 ^ 4) + 4 (19)
+
+
+# Parameters:
+#     x: unsigned word (stack)
+#     y: unsigned word (stack)
+#     (requires stack frame of 4 bytes)
+# Returns:
+#     z: unsigned word (x ^ y + y) (stack)
+#     (leaves stack frame of 2 bytes)
+func1:
+    lw t0 sp 0
+    lw t1 sp 2
+    add sp 2
+    xor t0 t0 t1
+    add t0 t0 t1
+    sw t0 sp 0
+    ret
+
+
+
+*** pre-processed assembly ***
+
+main:
+    xor r2 r0 r0 0x8000
+    add r2 r2 r0 0xFC
+    add r7 r0 r0 0x0B
+    mem r7 0x2 r2 0x00
+    add r7 r0 r0 0x04
+    mem r7 0x2 r2 0x02
+    jmp r1 r0 r0 func1
+    mem r9 0x3 r2 0x00
+    add r2 r2 r0 0x02
+end:
+    bra end
+
+func1:
+    mem r7 0x3 r2 0x00
+    mem r8 0x3 r2 0x02
+    add r2 r2 r0 0x02
+    xor r7 r7 r8
+    add r7 r7 r8
+    mem r7 0x2 r2 0x00
+    jmp r0 r1 r1 0x00
+
+
+
+*** machine code ***
+0000    00
+0001    A2
+0002    00
+0003    80
+
+0004    20
+0005    02
+0006    FC
+
+0007    00
+0008    07
+0009    0B
+
+000A    22
+000B    F7
+000C    00
+
+000D    00
+000E    07
+000F    04
+
+0010    22
+0011    F7
+0012    02
+
+0013    00
+0014    E1
+0015    20
+0016    00
+
+0017    32
+0018    F9
+0019    00
+
+001A    20
+001B    02
+001C    02
+
+001D    00
+001E    D1
+001F    FD
+
+0020    32
+0021    F7
+0022    00
+
+0023    32
+0024    F8
+0025    02
+
+0026    20
+0027    02
+0028    02
+
+0029    78
+002A    A7
+
+002B    78
+002C    07
+
+002D    22
+002E    F7
+002F    00
+
+0030    11
+0031    E0
+0032    00

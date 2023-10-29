@@ -1,0 +1,83 @@
+arithmetic with registers
+    inc. addr, memory -> bus low
+    inc. addr, memory -> bus high, bus -> i.d.
+    rr -> bus, bus -> alu right
+    rl -> bus, bus -> alu left
+    execute alu, alu result -> bus, bus -> rd, reset
+
+arithmetic with immediate byte
+    inc. addr, memory -> bus low
+    inc. addr, memory -> bus high, bus -> i.d.
+    inc. addr, sign extend, memory -> bus low, bus -> alu right
+    rl -> bus, bus -> alu left
+    execute alu, alu result -> bus, bus -> rd, reset
+
+arithmetic with immediate word
+    inc. addr, memory -> bus low
+    inc. addr, memory -> bus high, bus -> i.d.
+    inc. addr, memory -> bus low
+    inc. addr, memory -> bus high, bus -> alu right
+    rl -> bus, bus -> alu left
+    execute alu, alu result -> bus, bus -> rd, reset
+
+jump register
+    inc. addr, memory -> bus low
+    inc. addr, memory -> bus high, bus -> i.d.
+    inc. addr, memory -> bus low, bus -> index
+    inc. addr, address -> bus, bus -> rd
+    rl -> bus, bus -> address, reset
+
+jump immediate
+    inc. addr, memory -> bus low
+    inc. addr, memory -> bus high, bus -> i.d.
+    inc. addr, memory -> bus low
+    inc. addr, memory -> bus high, bus -> alu right
+    address -> bus, bus -> rd
+    alu right -> bus, bus -> address, reset
+
+branch
+    inc. addr, memory -> bus low
+    inc. addr, memory -> bus high, bus -> i.d.
+    rr -> bus, bus -> alu right
+    rl -> bus, bus -> alu left
+    inc. addr, memory -> bus low, execute alu
+    if take branch: bus -> index, reset
+
+load byte
+    inc. addr, memory -> bus low
+    inc. addr, memory -> bus high, bus -> i.d.
+    inc. addr, memory -> bus low, bus -> index
+    address -> temp pc, rr -> bus, bus -> address
+    memory -> bus low, bus -> rd, reset
+
+
+
+
+
+
+
+control flags:
+    step
+    reset
+    rl -> bus
+    rr -> bus
+    bus -> rd
+    bus -> alu left
+    bus -> alu right
+    alu execute
+    negate branch
+    branch condition unsigned
+    branch if equal
+    branch if less than
+    alu result -> bus
+    inc. addr
+    bus -> index
+    bus -> index (if branch)
+    hold index
+    address -> bus
+    bus -> address
+    memory -> bus low
+    memory -> bus high
+    bus -> i.d.
+    sign extend
+

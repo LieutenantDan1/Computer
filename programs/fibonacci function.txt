@@ -1,0 +1,25 @@
+main:
+    ldi a0 10
+    jsr fib
+    hlt
+
+
+
+# Fibonacci
+# Parameters:
+#     a0 - unsigned word - n
+# Returns:
+#     a0 - unsigned word - nth Fibonacci number
+fib:
+    ldi t0 0
+    ldi t1 1
+    beq a0 r0 end
+loop:
+    add t2 t0 t1
+    mov t0 t1
+    mov t1 t2
+    sub a0 1
+    bne a0 r0 loop
+end:
+    mov a0 t0
+    ret

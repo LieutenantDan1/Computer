@@ -1,0 +1,203 @@
+Every instruction has the following format:
+    x y z w [...]
+    Where x, y, z and w are 4 bit fields (MSB on the left, LSB on the right).
+
+    x represents the opcode.
+    y represents the destination register or 4 flags, depending on the opcode.
+    z represents the left operand register or 4 flags, depending on the opcode.
+    w represents the right operand register or 4 flags, depending on the opcode.
+
+    If [...] is present, it specifies an immediate argument, either a word or
+    byte.
+
+
+
+Add:
+    add rd rl rr
+        rd = rl + rr;
+    add rd rl r0 [byte]
+        rd = rl + (int8_t)[byte];
+
+Subtract:
+    sub rd rl rr
+        rd = rl - rr;
+    sub rd rl r0 [word]
+        rd = rl - [word];
+
+Logical Shift Left:
+    lsl rd rl rr
+        rd = rl << (rr & 0xF);
+    lsl rd rl r0 [byte]
+        rd = rl << ([byte] & 0xF);
+
+Logical Shift Right:
+    lsr rd rl rr
+        rd = rl >> (rr & 0xF);
+    lsr rd rl r0 [byte]
+        rd = rl >> ([byte] & 0xF);
+
+Arithmetic Shift Right:
+    asr rd rl rr
+        unsigned int n = rr & 0xF;
+        rd = rl >> n;
+        if ((int16_t)rl < 0 && n > 0)
+            rd |= 0xFFFFu << (16 - n);
+    asr rd rl r0 [byte]
+        unsigned int n = [byte] & 0xF;
+        rd = rl >> n;
+        if ((int16_t)rl < 0 && n > 0)
+            rd |= 0xFFFFu << (16 - n);
+
+Bitwise XOR:
+    xor rd rl rr
+        rd = rl ^ rr;
+    xor rd rl r0 [word]
+        rd = rl ^ [word];
+
+Bitwise OR:
+    or  rd rl rr
+        rd = rl | rr;
+    or  rd rl r0 [word]
+        rd = rl | [word];
+
+Bitwise AND:
+    and rd rl rr
+        rd = rl & rr;
+    and rd rl r0 [word]
+        rd = rl & [word];
+
+Jump:
+    jmp rd r0 rr
+        rd = pc;
+        pc = rr;
+    jmp rd rl rr [byte]
+        rd = pc;
+        pc = rr + [byte];
+    jmp rd r0 r0 [word]
+        rd = pc;
+        pc = [word];
+
+    jmp rd 0x0 rr
+        rd = pc;
+        pc = rr;
+    jmp rd 0x2 rr [byte]
+        rd = pc;
+        pc = rr + [byte];
+    jmp rd 0x3 rr [word]
+        rd = pc;
+        pc = [word];
+
+Branch:
+    bra [flags] rl rr [byte]
+        bool take = false;
+
+        if ([flags] & 0x1) // branch if equal
+            take ||= rl == rr;
+
+        if ([flags] & 0x2)
+        { // branch if less than
+            if ([flags] & 0x4) // unsigned
+                take ||= rl < rr;
+            else // signed
+                take ||= (int16_t)rl < (int16_t)rr;
+        }
+
+        if ([flags] & 0x8) // negate
+            take = !take;
+
+        if (take)
+            pc += (int8_t)[byte];
+
+Memory:
+    mem rd [flags] rr [byte]
+        uint16_t addr = rr + (int8_t)[byte];
+        if ([flags] & 0x1)
+        {
+            rd = memory[addr++];
+            if ([flags] & 0x2)
+            {
+                rd <<= 8;
+                rd |= memory[addr];
+            }
+            else if ([flags] & 0x4)
+            {
+                if ((int8_t)rd < 0)
+                    rd |= 0xFF00;
+            }
+        }
+        else
+        {
+            memory[addr++] = rd;
+            if ([flags] & 0x2)
+                memory[addr] = rd >> 8;
+        }
+
+
+add  rd rl rr
+add  rd rl byte
+
+sub  rd rl rr
+sub  rd rl word
+
+lsl  rd rl rr
+lsl  rd rl byte
+
+lsr  rd rl rr
+lsr  rd rl byte
+
+asr  rd rl rr
+asr  rd rl byte
+
+xor  rd rl rr
+xor  rd rl word
+
+or   rd rl rr
+or   rd rl word
+
+and  rd rl rr
+and  rd rl word
+
+jmp rl byte
+- jmp rl
+- jmp word/label
+
+jsr rd rl byte
+jsr rd rl
+jsr rd word/label
+
+call rl byte
+call rl
+call word/label
+
+bra  label
+beq  rl rr label
+bne  rl rr label
+blt  rl rr label
+ble  rl rr label
+bltu rl rr label
+bleu rl rr label
+
+ldw rd rr byte
+ldb rd rr byte
+lbu rd rr byte
+stw rd rr byte
+stb rd rr byte
+
+
+
+add
+sub
+_r0 // reserved (mul)
+_r1 // reserved (div)
+_r2 // reserved (rem)
+_r3 // reserved
+_r4 // reserved
+lsl
+lsr
+asr
+xor
+or
+and
+jmp
+bra
+mem
