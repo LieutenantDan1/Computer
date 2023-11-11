@@ -3,6 +3,24 @@
 #include <format>
 #include <stdexcept>
 
+Buffer::Buffer() : _data() {
+    std::get<Local>(_data).fill(0);
+}
+
+uint8_t* Buffer::get_size(size_t size) {
+    if (size > sizeof(Pointer)) {
+        _data = Pointer(new uint8_t[size]);
+        return std::get<Pointer>(_data).get();
+    }
+    return std::get<Local>(_data).data();
+}
+
+const uint8_t* Buffer::get() const {
+    if (std::holds_alternative<Pointer>(_data))
+        return std::get<Pointer>(_data).get();
+    return std::get<Local>(_data).data();
+}
+
 const InstructionDef& find_def(const Signature& signature) {
     auto x = INSTRUCTIONS.find(signature);
     if (x == INSTRUCTIONS.end()) {
@@ -11,39 +29,18 @@ const InstructionDef& find_def(const Signature& signature) {
     return x->second;
 }
 
-InstrInstance::InstrInstance(const Signature& signature) : _def(find_def(signature)), _curr_variant(0), _success(false) {}
+InstrInstance::InstrInstance(const Signature& signature, std::vector<ArgPtr>&& args) :
+    _args(std::forward<std::vector<ArgPtr>>(args)),
+    _def(find_def(signature)),
+    _curr_variant(0),
+    _success(false)
+{}
 
-uint8_t* InstrInstance::_alloc_buffer() {
-    if (_def.variants[_curr_variant].size > sizeof(_buffer.ptr)) {
-        if (_curr_variant == 0 || _def.variants[_curr_variant - 1].size <= sizeof(_buffer.ptr)) {
-            _buffer.ptr = new uint8_t[_def.variants[_curr_variant].size];
-        }
-        return _buffer.ptr;
-    }
-    return _buffer.loc;
-}
-
-const uint8_t* InstrInstance::_get_buffer() const {
-    if (_def.variants[_curr_variant].size > sizeof(_buffer.ptr)) {
-        return _buffer.ptr;
-    }
-    return _buffer.loc;
-}
-
-void InstrInstance::_dealloc_buffer() {
-    if (_def.variants[_curr_variant].size > sizeof(_buffer.ptr)) {
-        delete[] _buffer.ptr;
-    }
-}
-
-InstrInstance::~InstrInstance() {
-    _dealloc_buffer();
-}
-
-bool InstrInstance::try_emit(const std::vector<ArgPtr>& args) {
+bool InstrInstance::try_emit() {
     if (_def.independent && _success)
         return true;
-    _success = _def.variants[_curr_variant].emitter(_def.signature.opcode, args, _alloc_buffer());
+    const Variant& variant = _def.variants[_curr_variant];
+    _success = variant.emitter(_def.signature.opcode, _args, _buffer.get_size(variant.size));
     if (!_success) {
         ++_curr_variant;
         if (_curr_variant == _def.variants.size()) {
@@ -53,8 +50,32 @@ bool InstrInstance::try_emit(const std::vector<ArgPtr>& args) {
     return _success;
 }
 
+size_t InstrInstance::size() const {
+    return _def.variants[_curr_variant].size;
+}
+
 void InstrInstance::write(uint8_t* to) const {
     if (!_success)
         throw std::runtime_error("Cannot write instruction that hasn't been successfully emitted.");
-    std::memcpy(to, _get_buffer(), _def.variants[_curr_variant].size);
+    std::memcpy(to, _buffer.get(), size());
+}
+
+void assemble(std::vector<InstrInstance>& program, uint8_t* dest) {
+    bool retry = true;
+    while (retry) {
+        retry = false;
+        for (size_t i = 0; i < program.size(); ++i) {
+            if (!program[i].try_emit()) {
+                retry = true;
+            }
+        }
+    }
+
+    for (size_t i = 0, j = 0; i < program.size(); ++i) {
+        if (program[i].size() > 65536 - j) {
+            throw std::runtime_error("Program too large :----(");
+        }
+        program[i].write(dest + j);
+        j += program[i].size();
+    }
 }

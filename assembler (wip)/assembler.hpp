@@ -1,28 +1,39 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <variant>
 #include "instruction.hpp"
 
-class InstrInstance {
+class Buffer {
 private:
-    const InstructionDef& _def;
-    size_t _curr_variant;
-    union {
-        uint8_t* ptr;
-        uint8_t loc[sizeof(uint8_t*)];
-    } _buffer;
-    bool _success;
-
-    uint8_t* _alloc_buffer();
-    const uint8_t* _get_buffer() const;
-    void _dealloc_buffer();
+    using Pointer = std::unique_ptr<uint8_t[]>;
+    using Local = std::array<uint8_t, sizeof(Pointer)>;
+    [[no_unique_address]] std::variant<Pointer, Local> _data;
 
 public:
-    InstrInstance(const Signature& signature);
-    ~InstrInstance();
+    Buffer();
 
-    bool try_emit(const std::vector<ArgPtr>& args);
-    void write(uint8_t*) const;
+    uint8_t* get_size(size_t size);
+    const uint8_t* get() const;
 };
+
+class InstrInstance {
+private:
+    const std::vector<ArgPtr> _args;
+    const InstructionDef& _def;
+    size_t _curr_variant;
+    [[no_unique_address]] Buffer _buffer;
+    bool _success;
+    size_t _address;
+
+public:
+    InstrInstance(const Signature& signature, std::vector<ArgPtr>&& args);
+
+    bool try_emit();
+    size_t size() const;
+    void write(uint8_t* to) const;
+};
+
+void assemble(std::vector<InstrInstance>& program, uint8_t* dest);

@@ -33,10 +33,10 @@ public:
     static ArgPtr parse(const std::string& str);
 };
 
+class InstrInstance;
 class LabelArg : public Argument {
 public:
-    const std::string value;
+    InstrInstance& target;
 
-    LabelArg(std::string&& value);
+    LabelArg(InstrInstance& target);
 };
-

@@ -10,4 +10,4 @@ RegisterArg::RegisterArg(Register value) : value(value) {}
 
 ImmediateArg::ImmediateArg(bool negative, uint16_t value) : negative(negative), value(value) {}
 
-LabelArg::LabelArg(std::string&& value) : value(std::forward<std::string>(value)) {}
+LabelArg::LabelArg(InstrInstance& target) : target(target) {}
